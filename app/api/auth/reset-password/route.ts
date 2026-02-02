@@ -1,56 +1,43 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { hashPassword } from "@/lib/auth/password";
+import { NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcrypt";
-import { handleApiError, AppError, ErrorCodes } from "@/lib/error-handler";
 
-const Schema = z.object({
-  token: z.string().min(1),
-  newPassword: z.string().min(8),
+const ResetPasswordSchema = z.object({
+  token: z.string().uuid(),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export async function POST(req: Request) {
-  try {
-    const { token, newPassword } = Schema.parse(await req.json());
-    
-    const record = await prisma.verificationToken.findUnique({
-      where: { token },
-    });
-    
-    if (!record) {
-      throw new AppError(
-        ErrorCodes.TOKEN_INVALID,
-        "Invalid reset token",
-        400
-      );
-    }
-    
-    if (record.expires < new Date()) {
-      await prisma.verificationToken.delete({ where: { token } });
-      throw new AppError(
-        ErrorCodes.TOKEN_EXPIRED,
-        "Reset token has expired",
-        400
-      );
-    }
-    
-    const hashed = await bcrypt.hash(newPassword, 12);
-    await prisma.user.updateMany({
-      where: { email: record.identifier },
-      data: { password: hashed },
-    });
-    
-    await prisma.verificationToken.deleteMany({
-      where: { identifier: record.identifier },
-    });
-    
-    return NextResponse.json({ 
-      data: { 
-        reset: true,
-        message: "Password reset successfully"
-      } 
-    });
-  } catch (error) {
-    return handleApiError(error);
+  const body = await req.json();
+  const parsed = ResetPasswordSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors[0].message },
+      { status: 400 },
+    );
   }
+  const { token, newPassword } = parsed.data;
+
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { token },
+    include: { user: true },
+  });
+
+  if (!record || record.expiresAt < new Date()) {
+    return NextResponse.json({ error: "Token expired" }, { status: 400 });
+  }
+
+  await prisma.user.update({
+    where: { id: record.userId },
+    data: {
+      password: await hashPassword(newPassword),
+    },
+  });
+
+  await prisma.passwordResetToken.delete({
+    where: { token },
+  });
+
+  return NextResponse.json({ ok: true });
 }
