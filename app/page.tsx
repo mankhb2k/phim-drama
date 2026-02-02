@@ -1,7 +1,12 @@
 import FeaturedMovie from "@/app/components/movie/FeaturedMovie";
 import MovieCard from "@/app/components/movie/MovieCard";
 import Footer from "@/app/components/ui/Footer";
-import { fetchMovies, fetchNowPlayingMovies, fetchTrendingMovies, fetchTopRatedMovies } from "@/lib/tmdbapi";
+import {
+  fetchMovies,
+  fetchNowPlayingMovies,
+  fetchTrendingMovies,
+  fetchTopRatedMovies,
+} from "@/lib/tmdbapi";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -26,16 +31,16 @@ export default async function HomePage() {
       fetchMovies(),
       fetchNowPlayingMovies(),
       fetchTrendingMovies(),
-      fetchTopRatedMovies()
+      fetchTopRatedMovies(),
     ]);
-    
+
     popularMovies = popular.results;
     nowPlayingMovies = nowPlaying.results;
     trendingMovies = trending.results;
     topRatedMovies = topRated.results;
   } catch (err) {
-    console.error('Failed to fetch movies:', err);
-    error = 'Failed to load movies. Please check your TMDb API configuration.';
+    console.error("Failed to fetch movies:", err);
+    error = "Failed to load movies. Please check your TMDb API configuration.";
   }
 
   if (error) {
@@ -72,7 +77,11 @@ export default async function HomePage() {
             </div>
             <div className="movie-grid">
               {trendingMovies.slice(0, 10).map((movie, index) => (
-                <div key={movie.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div
+                  key={movie.id}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
                   <MovieCard movie={movie} />
                 </div>
               ))}
@@ -88,7 +97,11 @@ export default async function HomePage() {
             </div>
             <div className="movie-grid">
               {nowPlayingMovies.slice(0, 10).map((movie, index) => (
-                <div key={movie.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div
+                  key={movie.id}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
                   <MovieCard movie={movie} />
                 </div>
               ))}
@@ -104,7 +117,11 @@ export default async function HomePage() {
             </div>
             <div className="movie-grid">
               {popularMovies.slice(1, 11).map((movie, index) => (
-                <div key={movie.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div
+                  key={movie.id}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
                   <MovieCard movie={movie} />
                 </div>
               ))}
@@ -120,7 +137,11 @@ export default async function HomePage() {
             </div>
             <div className="movie-grid">
               {topRatedMovies.slice(0, 10).map((movie, index) => (
-                <div key={movie.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div
+                  key={movie.id}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
                   <MovieCard movie={movie} />
                 </div>
               ))}

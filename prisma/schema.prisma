@@ -28,16 +28,22 @@ enum MediaType {
   TV
 }
 
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELED
-  EXPIRED
-}
-
 enum AuthAction {
   LOGIN_SUCCESS
   LOGIN_FAIL
   LOGOUT
+}
+
+enum MovieStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  HIDDEN
+}
+
+enum VideoStatus {
+  OK
+  DIE
 }
 
 //////////////////////
@@ -45,23 +51,26 @@ enum AuthAction {
 //////////////////////
 
 model User {
-  id        String     @id @default(cuid())
-  username  String     @unique
-  password  String
-  email     String?    @unique
+  id            String  @id @default(cuid())
+  username      String  @unique
+  password      String
+  email         String? @unique
   emailVerified Boolean @default(false)
 
-  role      Role       @default(USER)
-  status    UserStatus @default(ACTIVE)
+  role   Role       @default(USER)
+  status UserStatus @default(ACTIVE)
 
-  sessions      Session[]
-  watchlist     WatchlistItem[]
-  favorites     Favorite[]
-  viewing       ViewingHistory[]
-  authLogs      AuthLog[]
+  sessions  Session[]
+  watchlist WatchlistItem[]
+  favorites Favorite[]
+  viewing   ViewingHistory[]
+  authLogs  AuthLog[]
 
-  resetTokens   PasswordResetToken[]
-  verifyTokens  EmailVerifyToken[]
+  resetTokens  PasswordResetToken[]
+  verifyTokens EmailVerifyToken[]
+
+  movies   Movie[]
+  episodes Episode[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -117,6 +126,7 @@ model EmailVerifyToken {
 
   createdAt DateTime @default(now())
 }
+
 //////////////////////
 // MOVIE FEATURES
 //////////////////////
@@ -157,5 +167,61 @@ model ViewingHistory {
   @@index([userId, watchedAt])
 }
 
+//////////////////////
+// EDITOR / MOVIE MVP
+//////////////////////
 
+model Movie {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  description String?
+  year        Int?
+  country     String?
+  genres      String[] // MVP: lưu đơn giản
+  posterUrl   String?
+  status      MovieStatus @default(DRAFT)
 
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  episodes Episode[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdById])
+}
+
+model Episode {
+  id       String      @id @default(cuid())
+  movieId  String
+  number   Int
+  language String
+  status   VideoStatus @default(OK)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  sources EpisodeSource[]
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([movieId, number, language])
+  @@index([movieId])
+}
+
+model EpisodeSource {
+  id        String      @id @default(cuid())
+  episodeId String
+  server    String
+  url       String
+  status    VideoStatus @default(OK)
+
+  episode Episode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([episodeId])
+}
